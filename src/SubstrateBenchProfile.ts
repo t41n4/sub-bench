@@ -1,7 +1,7 @@
-import {BenchProfile, TransactionResult} from "tank.bench-common";
-import {Keyring} from "@polkadot/keyring";
-import {ApiPromise, WsProvider} from "@polkadot/api";
-import {KeyringPair} from "@polkadot/keyring/types";
+import { BenchProfile, TransactionResult } from "tank.bench-common";
+import { Keyring } from "@polkadot/keyring";
+import { ApiPromise, WsProvider } from "@polkadot/api";
+import { KeyringPair } from "@polkadot/keyring/types";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 
 const TOKENS_TO_SEND = 1;
@@ -31,7 +31,7 @@ export default class SubstrateBenchProfile extends BenchProfile {
 
     private getRandomSeed(): number {
         let firstSeed = 25 * this.threadId;
-        let lastSeed = 25*(this.threadId+1)-1;
+        let lastSeed = 25 * (this.threadId + 1) - 1;
 
         return Math.floor(Math.random() * (lastSeed - firstSeed + 1)) + firstSeed;
     }
@@ -44,11 +44,13 @@ export default class SubstrateBenchProfile extends BenchProfile {
     async asyncConstruct(threadId: number) {
         // ed25519 and sr25519
         this.threadId = threadId;
-        this.keyring = new Keyring({type: 'sr25519'});
+        this.keyring = new Keyring({ type: 'sr25519' });
 
         let provider = new WsProvider(this.benchConfig.moduleConfig.wsUrl);
 
-        this.api = await ApiPromise.create({provider});
+        this.api = await ApiPromise.create({ provider });
+
+        await this.api.isReady;
 
         this.usersConfig = this.benchConfig.usersConfig;
         this.userNoncesArray = new Int32Array(this.benchConfig.usersConfig.userNonces);
@@ -69,7 +71,7 @@ export default class SubstrateBenchProfile extends BenchProfile {
             let receiverKeyringPair = this.keyPairs.get(receiverSeed)!;
 
             let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, TOKENS_TO_SEND);
-            let signedTransaction = transfer.sign(senderKeyPair, {nonce});
+            let signedTransaction = await transfer.signAsync(senderKeyPair.address, { nonce });
 
             this.preparedTransactions.push({ from: senderSeed, to: receiverSeed, signed: signedTransaction, nonce });
         }
@@ -96,7 +98,7 @@ export default class SubstrateBenchProfile extends BenchProfile {
 
         await transaction.signed.send();
 
-        return {code: 10, error: null}
+        return { code: 10, error: null }
     }
 }
 

@@ -1,7 +1,7 @@
-import {PreparationProfile} from "tank.bench-common";
-import {ApiPromise, WsProvider} from "@polkadot/api";
-import {Keyring} from "@polkadot/keyring";
-import {Index} from "@polkadot/types/interfaces";
+import { PreparationProfile } from "tank.bench-common";
+import { ApiPromise, WsProvider } from "@polkadot/api";
+import { Keyring } from "@polkadot/keyring";
+import { Index } from "@polkadot/types/interfaces";
 
 export default class SubstratePreparationProfile extends PreparationProfile {
 
@@ -15,13 +15,18 @@ export default class SubstratePreparationProfile extends PreparationProfile {
     }
 
     async prepare() {
-        let USERS_COUNT = SubstratePreparationProfile.USERS_COUNT;
+        const USERS_COUNT = SubstratePreparationProfile.USERS_COUNT;
 
-        let provider = new WsProvider(this.moduleConfig.wsUrl);
+        const provider = new WsProvider(this.moduleConfig.wsUrl);
 
-        let api = await ApiPromise.create({provider});
+        console.log("🚩 ~ file: SubstratePreparationProfile.ts:19 ~ SubstratePreparationProfile ~ USERS_COUNT:", USERS_COUNT);
+        console.log("🚩 ~ file: SubstratePreparationProfile.ts:21 ~ SubstratePreparationProfile ~ this.moduleConfig.wsUrl:", this.moduleConfig.wsUrl);
 
-        let keyring = new Keyring({type: 'sr25519'});
+        const api = await ApiPromise.create({ provider: provider });
+
+        await api.isReady;
+
+        let keyring = new Keyring({ type: 'sr25519' });
 
         const [chain, nodeName, nodeVersion] = await Promise.all([
             api.rpc.system.chain(),
@@ -69,7 +74,7 @@ export default class SubstratePreparationProfile extends PreparationProfile {
         let aliceNonce = (await api.query.system.account(aliceKeyPair.address)).nonce.toNumber();
         this.logger.log("Alice nonce is " + aliceNonce);
 
-        for (let seed  = firstSeed; seed <= lastSeed; seed++) {
+        for (let seed = firstSeed; seed <= lastSeed; seed++) {
             let keypair = keyring.addFromUri(this.stringSeed(seed));
 
             // should be greater than existential deposit.
@@ -79,8 +84,8 @@ export default class SubstratePreparationProfile extends PreparationProfile {
             this.logger.log(
                 `Alice -> ${receiverSeed} (${keypair.address})`
             );
-            await transfer.signAndSend(aliceKeyPair, { nonce: aliceNonce });
-            aliceNonce ++;
+            await transfer.signAndSend(aliceKeyPair.address, { nonce: aliceNonce });
+            aliceNonce++;
 
             if (seed % 200 == 199) {
                 // give node some time to breath
